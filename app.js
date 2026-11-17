@@ -67,15 +67,18 @@ const CUFF_R = [[572, 494], [468, 494], [468, 446], [572, 446]]; // same band he
 const CUFF_L = CUFF_R.map(([x, y]) => [W - x, y]);
 
 let S = {
-  seed: 7, mode: 'felt', accent: 'Classic',
-  base: '#e8372a',
-  pattern: 'none', p1: '#f2e8cf', p2: '#1f9150',
-  yoke: 'zigzag', yokeColor: '#f7cfd2',
-  trim: '#f7cfd2',
-  stitch: 'none', stitchColor: '#f8f6f0',
-  style: 'pullover', buttonColor: '#f2c244',
-  shapeColor: '#f8f6f0', garlandColor: '#f2c244',
-  stickers: CLIP_ART ? [{ id: 1, type: 'tree', x: 300, y: 305, s: 1.05, r: 0, c: '#1f9150' }] : [],
+  seed: 7, mode: 'felt', accent: 'Festive',
+  base: '#f2e8cf',
+  pattern: 'check', p1: '#22355e', p2: '#d8a066',
+  yoke: 'none', yokeColor: '#d8a066',
+  trim: '#d8a066',
+  stitch: 'none', stitchColor: '#e8372a',
+  style: 'pullover', buttonColor: '#f8f6f0',
+  shapeColor: '#d8a066', garlandColor: '#d8a066',
+  stickers: [
+    { id: 1, type: 'star', x: 49, y: 282.7, s: 2.175, r: 1.8, c: '#d8a066' },
+    { id: 2, type: 'star', x: 542.3, y: 283.3, s: 1.904, r: -3.9, c: '#d8a066' },
+  ],
 };
 
 /* ---------- helpers ---------- */
@@ -323,7 +326,7 @@ ${clipped(patternSVG(R))}${clipped(yokeSVG())}${clipped(trimSVG())}${clipped(sti
 
 /* ---------- UI ---------- */
 const stage = document.getElementById('stage'), panel = document.getElementById('panel'), tray = document.getElementById('tray'), garlandTray = document.getElementById('garlands');
-let sel = null, nextId = 2, drag = null;
+let sel = null, nextId = 3, drag = null;
 const cur = () => S.stickers.find(s => s.id === sel);
 
 const section = (title, body) => `<section><h2>${title}</h2>${body}</section>`;
@@ -521,6 +524,16 @@ function download() {
   };
   img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(svg));
 }
+
+/* ---------- light / dark theme ---------- */
+const themeBtn = document.getElementById('theme');
+function setTheme(t, save) {
+  document.documentElement.dataset.theme = t;
+  themeBtn.textContent = t === 'dark' ? '☀️ Light mode' : '🌙 Dark mode';
+  if (save) try { localStorage.setItem('theme', t); } catch (e) { /* private window: just don't remember */ }
+}
+setTheme(document.documentElement.dataset.theme || 'light');
+themeBtn.onclick = () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark', true);
 
 document.getElementById('rand').onclick = randomize;
 document.getElementById('dl').onclick = download;

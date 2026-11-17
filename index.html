@@ -5,11 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Felt Sweater Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&family=Protest+Riot&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
+<script>
+  // Pick the theme before the page paints: a saved choice wins, otherwise follow the system setting.
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('theme'); } catch (e) {}
+    if (t !== 'dark' && t !== 'light') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    document.documentElement.dataset.theme = t;
+  })();
+</script>
 </head>
 <body>
 <header>
+  <button id="theme" class="btn theme-btn" type="button">🌙 Dark mode</button>
   <h1>Felt Sweater Studio</h1>
   <p>Cut, stick and decorate your own cosy holiday sweater.</p>
 </header>
