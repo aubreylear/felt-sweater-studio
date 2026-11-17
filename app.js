@@ -34,7 +34,7 @@ const SHAPES = {
   oval: ['Oval', c => `<ellipse rx="34" ry="20" fill="${c}"/>`],
   bulb: ['Light bulb', c => rect(-9, -36, 18, 16, c) + `<path d="M-9,-22 C-27,-10 -23,26 0,36 C23,26 27,-10 9,-22 Z" fill="${c}"/>`],
 };
-// Solid one-colour garlands, about 280 wide, drawn as filled ribbons so they outline cleanly in the coloring page.
+// Solid one-color garlands, about 280 wide, drawn as filled ribbons so they outline cleanly in the coloring page.
 function ribbon(pts, c, w = 8) {
   const a = [], b = [];
   pts.forEach((p, i) => {
@@ -56,7 +56,7 @@ const GARLANDS = {
   beads: ['Beaded', c => curve(archY, 20).map(([x, y]) => `<circle cx="${x}" cy="${f(y)}" r="7.5" fill="${c}"/>`).join('')],
 };
 const WIDE = ['bunting', 'lights', 'pomgarland'];
-// Default colour per decoration; null means it takes its colours from the accent palette instead.
+// Default color per decoration; null means it takes its colors from the accent palette instead.
 const STICKER_COLOR = { tree: '#1f9150', snowman: '#e8372a', gingerbread: '#d8a066', wreath: '#22b5a7', star: '#f2c244', present: '#22b5a7', candy: '#e8372a', snowflake: '#f8f6f0', bunting: null, lights: null, pomgarland: '#e8372a' };
 const STICKER_SIZE = { star: .6, snowflake: .7, present: .8, tree: 1.05, gingerbread: 1.05, wreath: 1.05 };
 
@@ -356,9 +356,9 @@ function buildPanel() {
   const p = S.pattern;
   panel.innerHTML =
     section('Style', pills('style', [['pullover', 'Pullover'], ['cardigan', 'Cardigan']]) + (S.style === 'cardigan' ? label('Buttons') + swatches('buttonColor') : '')) +
-    section('Sweater colour', swatches('base')) +
+    section('Sweater color', swatches('base')) +
     section('Pattern', pills('pattern', PATTERNS) +
-      (p !== 'none' ? label('Pattern colour') + swatches('p1') + (p === 'wide' || p === 'check' ? '' : label('Second colour') + swatches('p2')) : '')) +
+      (p !== 'none' ? label('Pattern color') + swatches('p1') + (p === 'wide' || p === 'check' ? '' : label('Second color') + swatches('p2')) : '')) +
     section('Yoke', pills('yoke', YOKES) + (S.yoke !== 'none' ? swatches('yokeColor') : '')) +
     section('Cuffs, collar &amp; hem', swatches('trim')) +
     section('Stitching', pills('stitch', STITCHES) + (S.stitch !== 'none' ? swatches('stitchColor') : '')) +
@@ -380,13 +380,13 @@ function drawSelection() {
 </g>`);
 }
 
-// One tray of add-on pieces (shapes or garlands) with its own colour and controls for the selected piece.
+// One tray of add-on pieces (shapes or garlands) with its own color and controls for the selected piece.
 function trayHTML(title, set, colorKey, wide, note) {
   const st = cur(), mine = st && set[st.type];
   return `<h2>${title}</h2><div class="tray-row"><div class="clips">` +
     Object.entries(set).map(([t, [l, art]]) =>
       `<button class="clip${wide ? ' wide' : ''}" data-add="${t}" title="Add ${l}" aria-label="Add ${l}"><svg viewBox="${wide ? '-150 -34 300 68' : '-40 -40 80 80'}">${art(S[colorKey])}</svg></button>`).join('') +
-    '</div><div class="tray-side">' + label(mine ? 'Selected: ' + mine[0] : 'Colour') +
+    '</div><div class="tray-side">' + label(mine ? 'Selected: ' + mine[0] : 'Color') +
     '<div class="swatches">' + Object.entries(COLORS).map(([n, c]) =>
       `<button class="sw${(mine ? st.c : S[colorKey]) === c ? ' on' : ''}" style="--c:${c}" data-sc="${c}" data-ck="${colorKey}" title="${n}" aria-label="${n}"></button>`).join('') + '</div>' +
     (mine ? '<div class="pills" style="margin-top:10px"><button class="pill" data-act="front">Bring to front</button><button class="pill" data-act="dup">Duplicate</button><button class="pill" data-act="remove">Remove</button></div>' : '') +
@@ -419,7 +419,7 @@ const onControlClick = e => {
   if (d.add) sel = addSticker(d.add, SHAPES[d.add] ? { c: S.shapeColor } : GARLANDS[d.add] ? { c: S.garlandColor, y: 170 + (S.stickers.length % 4) * 34 } : {}).id;
   else if (d.sc) {
     S[d.ck] = d.sc;
-    if (st && (d.ck === 'shapeColor' ? SHAPES : GARLANDS)[st.type]) st.c = d.sc; // recolour the selection only from its own tray
+    if (st && (d.ck === 'shapeColor' ? SHAPES : GARLANDS)[st.type]) st.c = d.sc; // recolor the selection only from its own tray
   }
   else if (d.act === 'remove') return removeSel();
   else if (d.act === 'clear') { S.stickers = []; sel = null; }
@@ -492,7 +492,7 @@ function randomize() {
     stitch: pick(['none', 'none', 'running']),
     style: pick(['pullover', 'pullover', 'pullover', 'cardigan']),
   };
-  // thread colour: whichever option stands out most against the trim, yoke and body
+  // thread color: whichever option stands out most against the trim, yoke and body
   S.stitchColor = ['#f8f6f0', '#22355e', '#f2c244', '#e8372a'].map(c => [Math.min(dist(c, S.trim), dist(c, S.base), S.yoke === 'none' ? 999 : dist(c, S.yokeColor)), c]).sort((a, b) => b[0] - a[0])[0][1];
   S.buttonColor = ['#f2c244', '#f8f6f0', '#6b4530', '#22355e'].map(c => [dist(c, S.trim), c]).sort((a, b) => b[0] - a[0])[0][1];
   sel = null;
