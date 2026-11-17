@@ -398,10 +398,27 @@ function buildTray() {
     (S.stickers.length > 1 ? '<div class="pills" style="margin-top:10px"><button class="pill" data-act="clear">Remove all shapes and garlands</button></div>' : '');
 }
 
+// Undo: every render compares the design with the last one drawn and, if it changed, remembers the old one.
+// The felt / coloring-page view is left out so undo never flips the view.
+const undoBtn = document.getElementById('undo'), undoStack = [];
+const snapshot = () => JSON.stringify({ ...S, mode: null });
+let lastSnap = snapshot();
+
 function render(rebuild = true) {
+  const now = snapshot();
+  if (now !== lastSnap) { undoStack.push(lastSnap); if (undoStack.length > 100) undoStack.shift(); lastSnap = now; }
+  undoBtn.disabled = !undoStack.length;
   stage.innerHTML = buildSVG();
   drawSelection();
   if (rebuild) { buildPanel(); buildTray(); }
+}
+
+function undo() {
+  if (!undoStack.length) return;
+  lastSnap = undoStack.pop();
+  S = { ...JSON.parse(lastSnap), mode: S.mode };
+  if (!cur()) sel = null;
+  render();
 }
 
 function addSticker(type, props = {}) {
@@ -525,21 +542,13 @@ function download() {
   img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(svg));
 }
 
-/* ---------- light / dark theme ---------- */
-const themeBtn = document.getElementById('theme');
-function setTheme(t, save) {
-  document.documentElement.dataset.theme = t;
-  themeBtn.textContent = t === 'dark' ? '☀️ Light mode' : '🌙 Dark mode';
-  if (save) try { localStorage.setItem('theme', t); } catch (e) { /* private window: just don't remember */ }
-}
-setTheme(document.documentElement.dataset.theme || 'light');
-themeBtn.onclick = () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark', true);
-
 document.getElementById('rand').onclick = randomize;
+undoBtn.onclick = undo;
 document.getElementById('dl').onclick = download;
 document.getElementById('print').onclick = () => window.print();
 document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { S.mode = b.dataset.mode; render(); });
 document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') { e.preventDefault(); return undo(); }
   if (e.metaKey || e.ctrlKey || e.target.tagName === 'INPUT') return;
   if (e.key === 'r') randomize();
   else if ((e.key === 'Delete' || e.key === 'Backspace') && sel !== null) { e.preventDefault(); removeSel(); }

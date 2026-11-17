@@ -7,19 +7,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&family=Protest+Riot&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
-<script>
-  // Pick the theme before the page paints: a saved choice wins, otherwise follow the system setting.
-  (function () {
-    var t = null;
-    try { t = localStorage.getItem('theme'); } catch (e) {}
-    if (t !== 'dark' && t !== 'light') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    document.documentElement.dataset.theme = t;
-  })();
-</script>
 </head>
 <body>
 <header>
-  <button id="theme" class="btn theme-btn" type="button">🌙 Dark mode</button>
   <h1>Felt Sweater Studio</h1>
 </header>
 <main>
@@ -27,6 +17,7 @@
     <div id="stage" aria-label="Sweater preview"></div>
     <div class="actions">
       <button id="rand" class="btn primary" title="Shortcut: R">🎲 Surprise me</button>
+      <button id="undo" class="btn" title="Shortcut: Ctrl/Cmd + Z" disabled>↩ Undo</button>
       <div class="seg" role="group" aria-label="View">
         <button data-mode="felt">Felt</button>
         <button data-mode="outline">Coloring page</button>

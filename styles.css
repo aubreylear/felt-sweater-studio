@@ -8,15 +8,6 @@
   --clip: #e3d7bf; --clip-hover: #d9cbae; --clip-line: #b9a57f;
   --display: "Protest Riot", Fredoka, "Avenir Next", system-ui, sans-serif;
 }
-:root[data-theme="dark"] {
-  --bg: #131a2c; --card: #1b2440; --ink: #f2e8cf; --muted: #a9b0c4;
-  --accent: #e3b27a; --line: #303b5e;
-  --primary: #d8a066; --primary-hover: #e3b27a; --on-primary: #17203a;
-  --seg: #d8a066; --on-seg: #17203a;
-  --stage: #566089; --stage-line: #7480ab; --control: #222c4c; --hover: #5d6a94; --on-ink: #1b2440;
-  --clip: #303b5e; --clip-hover: #3a4670; --clip-line: #5d6a94;
-  color-scheme: dark;
-}
 * { box-sizing: border-box; }
 body { margin: 0; font-family: Fredoka, "Avenir Next", system-ui, sans-serif; background: var(--bg); color: var(--ink); }
 header { padding: 20px 24px 10px; text-align: center; }
@@ -95,7 +86,5 @@ h2 { margin: 0 0 9px; font-family: var(--display); font-size: 17px; font-weight:
 @media print { .tray { display: none; } }
 .tray .clip.wide { width: 128px; height: 46px; }
 
-header { position: relative; }
-.theme-btn { position: absolute; right: 20px; top: 18px; padding: 6px 14px; font-size: 15px; }
-@media (max-width: 880px) { .theme-btn { position: static; margin-bottom: 10px; } }
-@media print { .theme-btn { display: none; } }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn:disabled:hover { border-color: var(--line); }
