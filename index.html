@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Felt Sweater Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>Felt Sweater Studio</h1>
+  <p>Cut, stick and decorate your own cosy holiday sweater.</p>
+</header>
+<main>
+  <div class="stage-wrap">
+    <div id="stage" aria-label="Sweater preview"></div>
+    <div class="actions">
+      <button id="rand" class="btn primary" title="Shortcut: R">🎲 Surprise me</button>
+      <div class="seg" role="group" aria-label="View">
+        <button data-mode="felt">Felt</button>
+        <button data-mode="outline">Coloring page</button>
+      </div>
+      <button id="dl" class="btn">Download PNG</button>
+      <button id="print" class="btn">Print</button>
+    </div>
+    <p class="hint">Felt downloads have a transparent background; coloring pages are white.</p>
+  </div>
+  <aside id="panel"></aside>
+  <section id="tray" class="tray" aria-label="Shapes"></section>
+  <section id="garlands" class="tray" aria-label="Garland"></section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
