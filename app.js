@@ -1,4 +1,4 @@
-/* Felt Sweater Studio — everything is drawn as one SVG built from the state object S. */
+/* Sweater Endeavor — everything is drawn as one SVG built from the state object S. */
 
 const COLORS = {
   Red: '#e8372a', Wine: '#8e1b2a', Berry: '#c2356e', Plum: '#6b2d5c', Pink: '#f19aab', Blush: '#f7cfd2',
@@ -32,8 +32,38 @@ const SHAPES = {
   semicircle: ['Half circle', c => `<path d="M-30,14 A30,30 0 0 1 30,14 Z" fill="${c}"/>`],
   rectangle: ['Rectangle', c => rect(-36, -16, 72, 32, c)],
   oval: ['Oval', c => `<ellipse rx="34" ry="20" fill="${c}"/>`],
+  evergreen: ['Evergreen', c => `<path d="M0,-36 L14,-16 L8,-16 L22,4 L14,4 L28,24 L5,24 L5,36 L-5,36 L-5,24 L-28,24 L-14,4 L-22,4 L-8,-16 L-14,-16 Z" fill="${c}"/>`],
+  flake: ['Snowflake', c => poly(flakePts(), c)],
+  reindeer: ['Reindeer', c => `<path d="M-27,-5 L-20,-1 L2,-1 L9,-15 L10,-19 L8,-26 L2,-30 L3,-33 L9,-30 L10,-37 L13,-37 L13,-30 L19,-34 L20,-31 L14,-26 L14,-19 L20,-19 L27,-14 L27,-10 L16,-8 L13,5 L11,13 L11,34 L6,34 L6,14 L-14,14 L-14,34 L-19,34 L-19,14 L-22,11 L-22,3 Z" fill="${c}"/>`],
+  menorah: ['Menorah', c => menorahArt(c)],
   bulb: ['Light bulb', c => rect(-9, -36, 18, 16, c) + `<path d="M-9,-22 C-27,-10 -23,26 0,36 C23,26 27,-10 9,-22 Z" fill="${c}"/>`],
 };
+// Six-armed snowflake as one outline, so it cuts and colors as a single piece.
+function flakePts() {
+  const w = 3.2, h = 2.8, L = 35, b = 19, len = 12, k = .866, pts = [];
+  const t1 = (w - .5 * h) / k, t2 = (w + .5 * h) / k;
+  const side = [[1.732 * w, -w], [b - k * h + .5 * t1, -w], [b - k * h + .5 * len, -.5 * h - k * len], [b + k * h + .5 * len, .5 * h - k * len], [b + k * h + .5 * t2, -w], [L, -w]];
+  const arm = side.concat(side.map(([u, v]) => [u, -v]).reverse());
+  for (let i = 0; i < 6; i++) {
+    const a = i * Math.PI / 3 - Math.PI / 2, co = Math.cos(a), si = Math.sin(a);
+    arm.forEach(([u, v]) => pts.push([u * co - v * si, u * si + v * co]));
+  }
+  return pts;
+}
+// Nine candles on a curved branch with a stem and base, plus a flame over each candle.
+function menorahArt(c) {
+  let d = 'M-35,2 ', flames = '';
+  for (let i = -4; i <= 4; i++) {
+    const x = i * 8, t = i ? -18 : -25;
+    d += `L${x - 2.5},2 L${x - 2.5},${t} L${x + 2.5},${t} L${x + 2.5},2 `;
+    flames += `<ellipse cx="${x}" cy="${t - 5}" rx="2" ry="3.4" fill="${c}"/>`;
+  }
+  return `<path d="${d}L35,2 Q33,14 3.5,14 L3.5,27 L17,27 L17,34 L-17,34 L-17,27 L-3.5,27 L-3.5,14 Q-33,14 -35,2 Z" fill="${c}"/>` + flames;
+}
+// Felt letters A to Z, set in Graduate, a varsity-style font.
+const LETTER_FONT = "Graduate, Rockwell, 'Courier New', serif";
+const LETTERS = Object.fromEntries([...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].map(ch =>
+  ['ltr' + ch, ['Letter ' + ch, c => `<text text-anchor="middle" y="22" font-family="${LETTER_FONT}" font-size="64" fill="${c}">${ch}</text>`]]));
 // Solid one-color garlands, about 280 wide, drawn as filled ribbons so they outline cleanly in the coloring page.
 function ribbon(pts, c, w = 8) {
   const a = [], b = [];
@@ -67,19 +97,25 @@ const CUFF_R = [[572, 494], [468, 494], [468, 446], [572, 446]]; // same band he
 const CUFF_L = CUFF_R.map(([x, y]) => [W - x, y]);
 
 let S = {
-  seed: 7, mode: 'felt', accent: 'Festive',
+  seed: 7, mode: 'felt', side: 'front', accent: 'Festive',
   base: '#f2e8cf',
   pattern: 'check', p1: '#22355e', p2: '#d8a066',
   yoke: 'none', yokeColor: '#d8a066',
   trim: '#d8a066',
   stitch: 'none', stitchColor: '#e8372a',
   style: 'pullover', buttonColor: '#f8f6f0',
-  shapeColor: '#d8a066', garlandColor: '#d8a066',
+  shapeColor: '#d8a066', letterColor: '#d8a066', garlandColor: '#d8a066',
   stickers: [
     { id: 1, type: 'star', x: 49, y: 282.7, s: 2.175, r: 1.8, c: '#d8a066' },
     { id: 2, type: 'star', x: 542.3, y: 283.3, s: 1.904, r: -3.9, c: '#d8a066' },
   ],
+  backStickers: [], // pieces on the back; colors, pattern, yoke and trims are shared by both sides
 };
+// The side being drawn. The back has a higher neckline and never shows the cardigan opening or buttons.
+let VIEW = 'front';
+const cardi = () => S.style === 'cardigan' && VIEW === 'front';
+const KEY = (side = S.side) => side === 'back' ? 'backStickers' : 'stickers';
+const list = () => S[KEY()];
 
 /* ---------- helpers ---------- */
 function rng(seed) {
@@ -168,13 +204,13 @@ function yokeSVG() {
 
 function trimSVG() {
   return rect(130, 446, 340, 50, S.trim) + poly(CUFF_R, S.trim) + poly(CUFF_L, S.trim) +
-    (S.style === 'cardigan'
+    (cardi()
       ? `<path d="M225,32 L283,170 L283,480 L317,480 L317,170 L375,32 Z" fill="${S.trim}"/>` // V-neck band running into the button band
-      : `<path d="M222,30 L378,30 L378,52 Q300,136 222,52 Z" fill="${S.trim}"/>`);
+      : `<path d="M222,30 L378,30 L378,52 Q300,${VIEW === 'back' ? 114 : 136} 222,52 Z" fill="${S.trim}"/>`);
 }
 
 function buttonSVG() {
-  if (S.style !== 'cardigan') return '';
+  if (!cardi()) return '';
   let s = '';
   for (let y = 200; y <= 430; y += 57.5)
     s += `<circle cx="300" cy="${y}" r="7" fill="${S.buttonColor}"/><circle class="noline" cx="297.6" cy="${y}" r="1.2" fill="#000" fill-opacity=".45"/><circle class="noline" cx="302.4" cy="${y}" r="1.2" fill="#000" fill-opacity=".45"/>`;
@@ -185,7 +221,7 @@ function buttonSVG() {
 function stitchSVG() {
   if (S.stitch === 'none') return '';
   const yoke = S.yoke;
-  let d = 'M150,460 L450,460 ' + (S.style === 'cardigan' ? 'M243.9,62.7 L288,168 L288,446 M356.1,62.7 L312,168 L312,446 ' : 'M238,55 Q300,114 362,55 ');
+  let d = 'M150,460 L450,460 ' + (cardi() ? 'M243.9,62.7 L288,168 L288,446 M356.1,62.7 L312,168 L312,446 ' : VIEW === 'back' ? 'M238,55 Q300,92 362,55 ' : 'M238,55 Q300,114 362,55 ');
   [CUFF_R, CUFF_L].forEach(q => { const a = lerp(q[0], q[3], .7), b = lerp(q[1], q[2], .7); d += `M${f(a[0])},${f(a[1])} L${f(b[0])},${f(b[1])} `; });
   if (yoke === 'zigzag') { d += 'M600,116 '; for (let x = 575, i = 1; x >= 0; x -= 25, i++) d += `L${x},${i % 2 ? 158 : 116} `; }
   else if (yoke === 'round') d += 'M0,82 Q300,222 600,82 ';
@@ -228,7 +264,8 @@ function treeSVG(c, cols) {
 
 // Art for one decoration, drawn around (0,0). Returns flat felt pieces and fuzzy pom pieces separately.
 function stickerArt(type, c) {
-  if (SHAPES[type] || GARLANDS[type]) return { felt: (SHAPES[type] || GARLANDS[type])[1](c), poms: '' };
+  const piece = SHAPES[type] || LETTERS[type] || GARLANDS[type];
+  if (piece) return { felt: piece[1](c), poms: '' };
   if (WIDE.includes(type)) return garlandArt(type, c);
   const cols = PALETTES[S.accent].filter(k => dist(k, c) > 60);
   let felt = '', poms = '';
@@ -284,7 +321,7 @@ function stickerArt(type, c) {
 
 const tf = st => `translate(${f(st.x)},${f(st.y)}) rotate(${f(st.r)}) scale(${+st.s.toFixed(3)})`;
 
-const sweaterPath = () => (S.style === 'cardigan' ? 'M255,58 L300,168 L345,58 ' : 'M255,58 Q300,92 345,58 ') + D_REST;
+const sweaterPath = () => (cardi() ? 'M255,58 L300,168 L345,58 ' : VIEW === 'back' ? 'M255,58 Q300,70 345,58 ' : 'M255,58 Q300,92 345,58 ') + D_REST;
 
 const defs = () => `
 <clipPath id="sw"><path d="${sweaterPath()}"/></clipPath>
@@ -306,15 +343,16 @@ const OUTLINE_CSS = `
 .art .st{stroke-dasharray:9 7!important;stroke-linecap:butt}
 .art .ol{stroke-width:3.5px!important}`;
 
-function buildSVG() {
+function buildSVG(side = S.side, suffix = '') {
+  VIEW = side;
   const R = rng(S.seed * 9973 + 11);
   const felt = inner => inner ? `<g filter="url(#felt)">${inner}</g>` : '';
   const clipped = inner => inner ? felt(`<g clip-path="url(#sw)">${inner}</g>`) : '';
-  const stickers = S.stickers.map(st => {
+  const stickers = S[KEY(side)].map(st => {
     const a = stickerArt(st.type, st.c);
     return `<g class="stk" data-id="${st.id}" transform="${tf(st)}">${felt(a.felt)}${a.poms ? `<g filter="url(#pom)">${a.poms}</g>` : ''}</g>`;
   }).join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}">
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}">
 <style>${S.mode === 'outline' ? OUTLINE_CSS : ''}</style><defs>${defs()}</defs>${S.mode === 'outline' ? rect(0, 0, W, H, '#fff') : ''}
 <g class="art">
 <g filter="url(#feltBase)"><path d="${sweaterPath()}" fill="${S.base}"/></g>
@@ -322,12 +360,14 @@ ${clipped(patternSVG(R))}${clipped(yokeSVG())}${clipped(trimSVG())}${clipped(sti
 <g clip-path="url(#sw)">${stickers}</g>
 <path class="line ol" d="${sweaterPath()}" fill="none" stroke="none"/>
 </g></svg>`;
+  return suffix ? svg.replace(/(id="|url\(#)(sw|feltBase|felt|pomShade|pom)\b/g, '$1$2' + suffix) : svg;
 }
 
 /* ---------- UI ---------- */
-const stage = document.getElementById('stage'), panel = document.getElementById('panel'), tray = document.getElementById('tray'), garlandTray = document.getElementById('garlands');
+const stage = document.getElementById('stage'), panel = document.getElementById('panel'), tray = document.getElementById('tray'), letterTray = document.getElementById('letters'), garlandTray = document.getElementById('garlands');
+const TRAYS = { shapeColor: SHAPES, letterColor: LETTERS, garlandColor: GARLANDS };
 let sel = null, nextId = 3, drag = null;
-const cur = () => S.stickers.find(s => s.id === sel);
+const cur = () => list().find(s => s.id === sel);
 
 const section = (title, body) => `<section><h2>${title}</h2>${body}</section>`;
 const label = t => `<div class="lbl">${t}</div>`;
@@ -348,7 +388,7 @@ function clipArtPanel() {
       `<button class="sw${st.c === c ? ' on' : ''}" style="--c:${c}" data-sc="${c}" title="${n}" aria-label="${n}"></button>`).join('') + '</div>';
     h += '<div class="pills" style="margin-top:10px"><button class="pill" data-act="front">Bring to front</button><button class="pill" data-act="dup">Duplicate</button><button class="pill" data-act="remove">Remove</button></div>';
   }
-  if (S.stickers.length > 1) h += '<div class="pills" style="margin-top:8px"><button class="pill" data-act="clear">Remove all</button></div>';
+  if (list().length > 1) h += '<div class="pills" style="margin-top:8px"><button class="pill" data-act="clear">Remove all</button></div>';
   return h;
 }
 
@@ -381,11 +421,12 @@ function drawSelection() {
 }
 
 // One tray of add-on pieces (shapes or garlands) with its own color and controls for the selected piece.
-function trayHTML(title, set, colorKey, wide, note) {
+function trayHTML(title, set, colorKey, kind, note) {
+  const wide = kind === 'wide';
   const st = cur(), mine = st && set[st.type];
   return `<h2>${title}</h2><div class="tray-row"><div class="clips">` +
     Object.entries(set).map(([t, [l, art]]) =>
-      `<button class="clip${wide ? ' wide' : ''}" data-add="${t}" title="Add ${l}" aria-label="Add ${l}"><svg viewBox="${wide ? '-150 -34 300 68' : '-40 -40 80 80'}">${art(S[colorKey])}</svg></button>`).join('') +
+      `<button class="clip${kind ? ' ' + kind : ''}" data-add="${t}" title="Add ${l}" aria-label="Add ${l}"><svg viewBox="${wide ? '-150 -34 300 68' : '-40 -40 80 80'}">${art(S[colorKey])}</svg></button>`).join('') +
     '</div><div class="tray-side">' + label(mine ? 'Selected: ' + mine[0] : 'Color') +
     '<div class="swatches">' + Object.entries(COLORS).map(([n, c]) =>
       `<button class="sw${(mine ? st.c : S[colorKey]) === c ? ' on' : ''}" style="--c:${c}" data-sc="${c}" data-ck="${colorKey}" title="${n}" aria-label="${n}"></button>`).join('') + '</div>' +
@@ -393,15 +434,17 @@ function trayHTML(title, set, colorKey, wide, note) {
     `</div></div><p class="note">${note}</p>`;
 }
 function buildTray() {
-  tray.innerHTML = trayHTML('Shapes', SHAPES, 'shapeColor', false, 'Click a shape to add it, then drag it on the sweater. Use the blue handle to resize and rotate, or the red × to remove.');
-  garlandTray.innerHTML = trayHTML('Garland', GARLANDS, 'garlandColor', true, 'Click a garland to add it, then drag, resize and rotate it like a shape.') +
-    (S.stickers.length > 1 ? '<div class="pills" style="margin-top:10px"><button class="pill" data-act="clear">Remove all shapes and garlands</button></div>' : '');
+  tray.innerHTML = trayHTML('Shapes', SHAPES, 'shapeColor', '', 'Click a shape to add it, then drag it on the sweater. Use the blue handle to resize and rotate, or the red × to remove.');
+  letterTray.innerHTML = trayHTML('Letters', LETTERS, 'letterColor', 'letter', 'Click a letter to add it, then drag, resize and rotate it like a shape.');
+  garlandTray.innerHTML = trayHTML('Garland', GARLANDS, 'garlandColor', 'wide', 'Click a garland to add it, then drag, resize and rotate it like a shape.') +
+    (list().length > 1 ? `<div class="pills" style="margin-top:10px"><button class="pill" data-act="clear">Remove everything from the ${S.side}</button></div>` : '');
 }
 
 // Undo: every render compares the design with the last one drawn and, if it changed, remembers the old one.
-// The felt / coloring-page view is left out so undo never flips the view.
+// The felt / coloring-page view and the side on show are left out, so switching them is not an undo step.
 const undoBtn = document.getElementById('undo'), undoStack = [];
-const snapshot = () => JSON.stringify({ ...S, mode: null });
+const snapshot = () => JSON.stringify({ ...S, mode: null, side: null });
+const sideTag = document.getElementById('sideTag');
 let lastSnap = snapshot();
 
 function render(rebuild = true) {
@@ -409,6 +452,7 @@ function render(rebuild = true) {
   if (now !== lastSnap) { undoStack.push(lastSnap); if (undoStack.length > 100) undoStack.shift(); lastSnap = now; }
   undoBtn.disabled = !undoStack.length;
   stage.innerHTML = buildSVG();
+  sideTag.textContent = S.side === 'back' ? 'Back' : 'Front';
   drawSelection();
   if (rebuild) { buildPanel(); buildTray(); }
 }
@@ -416,31 +460,33 @@ function render(rebuild = true) {
 function undo() {
   if (!undoStack.length) return;
   lastSnap = undoStack.pop();
-  S = { ...JSON.parse(lastSnap), mode: S.mode };
+  const prev = JSON.parse(lastSnap), differs = k => JSON.stringify(prev[k]) !== JSON.stringify(S[k]);
+  const f = differs('stickers'), b = differs('backStickers');
+  S = { ...prev, mode: S.mode, side: b && !f ? 'back' : f && !b ? 'front' : S.side }; // show the side the undo changed
   if (!cur()) sel = null;
   render();
 }
 
 function addSticker(type, props = {}) {
-  const n = S.stickers.length;
+  const n = list().length;
   const st = { id: nextId++, type, x: 300, y: WIDE.includes(type) ? 170 + (n % 4) * 40 : 290 + (n % 4) * 14 - 20, s: STICKER_SIZE[type] || 1, r: 0, c: STICKER_COLOR[type] || '#e8372a', ...props };
   if (!props.c && dist(st.c, S.base) < 70) st.c = dist('#f8f6f0', S.base) > 70 ? '#f8f6f0' : '#f2c244';
-  S.stickers.push(st);
+  list().push(st);
   return st;
 }
-function removeSel() { S.stickers = S.stickers.filter(s => s.id !== sel); sel = null; render(); }
+function removeSel() { S[KEY()] = list().filter(s => s.id !== sel); sel = null; render(); }
 
 const onControlClick = e => {
   const b = e.target.closest('button'); if (!b) return;
   const d = b.dataset, st = cur();
-  if (d.add) sel = addSticker(d.add, SHAPES[d.add] ? { c: S.shapeColor } : GARLANDS[d.add] ? { c: S.garlandColor, y: 170 + (S.stickers.length % 4) * 34 } : {}).id;
+  if (d.add) sel = addSticker(d.add, SHAPES[d.add] ? { c: S.shapeColor } : LETTERS[d.add] ? { c: S.letterColor, s: 1.4, x: 220 + (list().length % 5) * 40, y: 250 } : GARLANDS[d.add] ? { c: S.garlandColor, y: 170 + (list().length % 4) * 34 } : {}).id;
   else if (d.sc) {
     S[d.ck] = d.sc;
-    if (st && (d.ck === 'shapeColor' ? SHAPES : GARLANDS)[st.type]) st.c = d.sc; // recolor the selection only from its own tray
+    if (st && TRAYS[d.ck][st.type]) st.c = d.sc; // recolor the selection only from its own tray
   }
   else if (d.act === 'remove') return removeSel();
-  else if (d.act === 'clear') { S.stickers = []; sel = null; }
-  else if (d.act === 'front' && st) { S.stickers = S.stickers.filter(s => s !== st).concat(st); }
+  else if (d.act === 'clear') { S[KEY()] = []; sel = null; }
+  else if (d.act === 'front' && st) { S[KEY()] = list().filter(s => s !== st).concat(st); }
   else if (d.act === 'dup' && st) sel = addSticker(st.type, { ...st, id: nextId++, x: st.x + 24, y: st.y + 24 }).id;
   else if (d.k) S[d.k] = d.v;
   else return;
@@ -448,6 +494,7 @@ const onControlClick = e => {
 };
 panel.addEventListener('click', onControlClick);
 tray.addEventListener('click', onControlClick);
+letterTray.addEventListener('click', onControlClick);
 garlandTray.addEventListener('click', onControlClick);
 
 /* ---------- dragging on the sweater ---------- */
@@ -505,7 +552,7 @@ function randomize() {
   S = {
     ...S, seed: Math.floor(R() * 1e6), accent, base, pattern, p1: at(0), p2: at(1),
     yoke: busy ? 'none' : pick(['none', 'zigzag', 'zigzag', 'round']), yokeColor: at(1),
-    trim: at(0), stickers: [],
+    trim: at(0), stickers: [], backStickers: [],
     stitch: pick(['none', 'none', 'running']),
     style: pick(['pullover', 'pullover', 'pullover', 'cardigan']),
   };
@@ -524,26 +571,58 @@ function randomize() {
 }
 
 /* ---------- export ---------- */
-function download() {
-  const scale = 3, svg = stage.querySelector('svg').cloneNode(true);
-  svg.querySelectorAll('.ui').forEach(n => n.remove());
-  svg.setAttribute('width', W * scale); svg.setAttribute('height', H * scale);
-  const img = new Image();
-  img.onload = () => {
-    const c = document.createElement('canvas'); c.width = W * scale; c.height = H * scale;
-    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-    c.toBlob(b => {
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(b);
-      a.download = S.mode === 'outline' ? 'sweater-coloring-page.png' : 'felt-sweater.png';
-      a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-    });
+// An SVG drawn to a canvas cannot see the page's web fonts, so letters need the font file embedded in the SVG itself.
+let fontCSS = null;
+async function letterFontCSS() {
+  if (fontCSS !== null) return fontCSS;
+  try {
+    const css = await (await fetch('https://fonts.googleapis.com/css2?family=Graduate&display=swap')).text();
+    const url = [...css.matchAll(/url\((https:[^)]+)\)/g)].pop()[1];
+    const bytes = new Uint8Array(await (await fetch(url)).arrayBuffer());
+    let bin = ''; bytes.forEach(b => bin += String.fromCharCode(b));
+    fontCSS = `@font-face{font-family:"Graduate";src:url(data:font/woff2;base64,${btoa(bin)}) format("woff2")}`;
+  } catch (e) { return ''; } // offline: letters fall back to a system font, try again next time
+  return fontCSS;
+}
+
+// Front and back are drawn side by side in one image.
+async function download() {
+  const scale = 3;
+  const hasLetters = [...S.stickers, ...S.backStickers].some(st => LETTERS[st.type]);
+  const css = hasLetters ? await letterFontCSS() : '';
+  const imgs = await Promise.all(['front', 'back'].map(side => new Promise((res, rej) => {
+    const svg = buildSVG(side).replace('<svg ', `<svg width="${W * scale}" height="${H * scale}" `).replace('<style>', '<style>' + css);
+    const img = new Image();
+    img.onload = () => res(img); img.onerror = rej;
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  })));
+  if (hasLetters) await new Promise(r => setTimeout(r, 120)); // give the embedded font a moment to decode
+  const c = document.createElement('canvas'); c.width = W * scale * 2; c.height = H * scale;
+  imgs.forEach((img, i) => c.getContext('2d').drawImage(img, i * W * scale, 0, W * scale, H * scale));
+  c.toBlob(b => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(b);
+    a.download = S.mode === 'outline' ? 'sweater-coloring-page.png' : 'felt-sweater.png';
+    a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  });
+}
+
+// Printing swaps the stage for a sheet with both sides; each copy gets its own ids so their clips and filters don't clash.
+const printout = document.getElementById('printout');
+window.addEventListener('beforeprint', () => { printout.innerHTML = buildSVG('front', 'F') + buildSVG('back', 'B'); });
+window.addEventListener('afterprint', () => { printout.innerHTML = ''; });
+
+function flip() {
+  if (drag) return;
+  stage.animate([{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }], { duration: 130, easing: 'ease-in' }).onfinish = () => {
+    S.side = S.side === 'back' ? 'front' : 'back'; sel = null; render();
+    stage.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { duration: 130, easing: 'ease-out' });
   };
-  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(svg));
 }
 
 document.getElementById('rand').onclick = randomize;
 undoBtn.onclick = undo;
+document.getElementById('flip').onclick = flip;
 document.getElementById('dl').onclick = download;
 document.getElementById('print').onclick = () => window.print();
 document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { S.mode = b.dataset.mode; render(); });
@@ -551,8 +630,10 @@ document.addEventListener('keydown', e => {
   if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') { e.preventDefault(); return undo(); }
   if (e.metaKey || e.ctrlKey || e.target.tagName === 'INPUT') return;
   if (e.key === 'r') randomize();
+  else if (e.key === 'f') flip();
   else if ((e.key === 'Delete' || e.key === 'Backspace') && sel !== null) { e.preventDefault(); removeSel(); }
   else if (e.key === 'Escape' && sel !== null) { sel = null; render(); }
 });
 
 render();
+if (document.fonts) document.fonts.ready.then(() => render(false)); // re-measure letters once the font is in

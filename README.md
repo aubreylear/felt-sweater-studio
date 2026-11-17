@@ -1,4 +1,4 @@
-# Felt Sweater Studio
+# Sweater Endeavor
 
 Design a felt-style holiday sweater in the browser: pick colors, a pattern, a yoke and trims, add stitching, shapes and garlands, then download it as a PNG or switch to a coloring page.
 

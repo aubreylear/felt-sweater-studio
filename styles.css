@@ -11,7 +11,7 @@
 * { box-sizing: border-box; }
 body { margin: 0; font-family: Fredoka, "Avenir Next", system-ui, sans-serif; background: var(--bg); color: var(--ink); }
 header { padding: 20px 24px 10px; text-align: center; }
-h1 { margin: 0; font-family: var(--display); font-size: 40px; font-weight: 400; line-height: 1.1; color: var(--accent); letter-spacing: .5px; }
+h1 { margin: 0; text-transform: uppercase; font-family: "Rampart One", var(--display); font-size: 52px; font-weight: 400; line-height: 1.1; color: var(--accent); letter-spacing: .5px; }
 header p { margin: 2px 0 0; color: var(--muted); }
 
 main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; max-width: 1240px; margin: 0 auto; padding: 14px 20px 28px; align-items: start; }
@@ -88,3 +88,14 @@ h2 { margin: 0 0 9px; font-family: var(--display); font-size: 17px; font-weight:
 
 .btn:disabled { opacity: .45; cursor: default; }
 .btn:disabled:hover { border-color: var(--line); }
+.tray .clip.letter { width: 46px; height: 46px; padding: 3px; }
+.stage-wrap { position: relative; }
+.side-tag { position: absolute; top: 12px; left: 12px; padding: 3px 12px; border-radius: 999px; background: var(--primary); color: var(--on-primary); font-family: var(--display); font-size: 15px; letter-spacing: .5px; pointer-events: none; }
+#printout { display: none; }
+@media print {
+  #stage, .side-tag, .hint { display: none; }
+  #printout { display: block; }
+  #printout svg { display: block; height: 4.7in; width: auto; margin: 0 auto .15in; }
+}
+#undo { position: absolute; top: 10px; right: 10px; padding: 5px 14px; font-size: 15px; }
+@media print { #undo { display: none; } }
