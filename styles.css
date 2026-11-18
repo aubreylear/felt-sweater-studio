@@ -97,5 +97,5 @@ h2 { margin: 0 0 9px; font-family: var(--display); font-size: 17px; font-weight:
   #printout { display: block; }
   #printout svg { display: block; height: 4.7in; width: auto; margin: 0 auto .15in; }
 }
-#undo { position: absolute; top: 10px; right: 10px; padding: 5px 14px; font-size: 15px; }
-@media print { #undo { display: none; } }
+#flip { position: absolute; top: 10px; right: 10px; padding: 5px 14px; font-size: 15px; }
+@media print { #flip { display: none; } }

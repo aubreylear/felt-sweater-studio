@@ -321,10 +321,52 @@ function stickerArt(type, c) {
 
 const tf = st => `translate(${f(st.x)},${f(st.y)}) rotate(${f(st.r)}) scale(${+st.s.toFixed(3)})`;
 
-const sweaterPath = () => (cardi() ? 'M255,58 L300,168 L345,58 ' : VIEW === 'back' ? 'M255,58 Q300,70 345,58 ' : 'M255,58 Q300,92 345,58 ') + D_REST;
+const sweaterPath = (view = VIEW) => (view === 'back' ? 'M255,58 Q300,70 345,58 ' : S.style === 'cardigan' ? 'M255,58 L300,168 L345,58 ' : 'M255,58 Q300,92 345,58 ') + D_REST;
+const otherSide = side => side === 'back' ? 'front' : 'back';
+
+/* ---------- wrap-around ----------
+   Whatever hangs over the edge on one side carries on round to the other. The overhang is folded over the
+   nearest stretch of edge (a mirror across that edge) and then flipped left-to-right, because the other
+   side is seen from behind. */
+// A piece belongs to the part it sits on: the body (B) or a sleeve (R, L). Below the armpit it stays on that
+// part instead of jumping the gap; above the armpit the parts are joined, so it runs straight across the seam.
+const sideX = y => 444.5 + Math.max(0, y - 270) * .02;  // the body's side seam
+const homeOf = st => { const g = 444.5 + Math.max(0, st.y - 270) * .06; return st.x > g ? 'R' : st.x < W - g ? 'L' : 'B'; };
+const inZone = (k, x, y) => y < 270 || (k === 'R' ? x >= sideX(y) : k === 'L' ? x <= W - sideX(y) : x < sideX(y) && x > W - sideX(y));
+const ZONE = {
+  B: 'M-900,-900 H1500 V270 H444.5 L449.5,520 H150.5 L155.5,270 H-900 Z',
+  R: 'M-900,-900 H1500 V1500 H469.1 L444.5,270 H-900 Z',
+  L: 'M-900,-900 H1500 V270 H155.5 L130.9,1500 H-900 Z',
+};
+const FLIPPED = { B: 'B', R: 'L', L: 'R' }; // the same part as seen from the other side
+const edgeCache = {};
+function edgePoints(d) {
+  if (!edgeCache[d]) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.style.cssText = 'position:absolute;width:0;height:0;visibility:hidden';
+    svg.innerHTML = `<path d="${d}"/>`;
+    document.body.append(svg);
+    const p = svg.firstChild, n = p.getTotalLength(), pts = [];
+    for (let l = 0; l < n; l += 4) { const q = p.getPointAtLength(l); pts.push([q.x, q.y]); }
+    svg.remove();
+    edgeCache[d] = pts;
+  }
+  return edgeCache[d];
+}
+function wrapMatrix(st, d, home) {
+  const pts = edgePoints(d).filter(p => inZone(home, p[0], p[1]));
+  let best = 0, bd = Infinity;
+  pts.forEach((p, i) => { const k = (p[0] - st.x) ** 2 + (p[1] - st.y) ** 2; if (k < bd) { bd = k; best = i; } });
+  const p = pts[best], a = pts[(best + pts.length - 1) % pts.length], b = pts[(best + 1) % pts.length];
+  if (p[0] > 250 && p[0] < 350 && p[1] < 172) return null; // the neck is an opening, not a fold
+  const th = Math.atan2(b[1] - a[1], b[0] - a[0]), C = Math.cos(2 * th), Sn = Math.sin(2 * th);
+  return `matrix(${[-C, Sn, -Sn, -C, W - (p[0] - C * p[0] - Sn * p[1]), p[1] - Sn * p[0] + C * p[1]].map(v => +v.toFixed(4))})`;
+}
 
 const defs = () => `
 <clipPath id="sw"><path d="${sweaterPath()}"/></clipPath>
+${['B', 'R', 'L'].map(k => `<clipPath id="z${k}"><path d="${ZONE[k]}"/></clipPath>
+<clipPath id="o${k}"><path clip-rule="evenodd" d="M-2000,-2000 H2600 V2600 H-2000 Z ${sweaterPath(otherSide(VIEW))}"/><path clip-rule="evenodd" d="M-2000,-2000 H2600 V2600 H-2000 Z ${ZONE[k]}"/></clipPath>`).join('')}
 <radialGradient id="pomShade" cx="38%" cy="34%" r="70%"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".16"/></radialGradient>
 ${['felt', 'feltBase', 'pom'].map((id, i) => `
 <filter id="${id}" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
@@ -348,19 +390,22 @@ function buildSVG(side = S.side, suffix = '') {
   const R = rng(S.seed * 9973 + 11);
   const felt = inner => inner ? `<g filter="url(#felt)">${inner}</g>` : '';
   const clipped = inner => inner ? felt(`<g clip-path="url(#sw)">${inner}</g>`) : '';
-  const stickers = S[KEY(side)].map(st => {
-    const a = stickerArt(st.type, st.c);
-    return `<g class="stk" data-id="${st.id}" transform="${tf(st)}">${felt(a.felt)}${a.poms ? `<g filter="url(#pom)">${a.poms}</g>` : ''}</g>`;
+  const art = st => { const a = stickerArt(st.type, st.c); return felt(a.felt) + (a.poms ? `<g filter="url(#pom)">${a.poms}</g>` : ''); };
+  const stickers = S[KEY(side)].map(st => `<g clip-path="url(#z${homeOf(st)})"><g class="stk" data-id="${st.id}" transform="${tf(st)}">${art(st)}</g></g>`).join('');
+  // the cut-off parts of the other side's pieces, wrapped round onto this side
+  const wrapped = S[KEY(otherSide(side))].map(st => {
+    const home = homeOf(st), m = wrapMatrix(st, sweaterPath(otherSide(side)), home);
+    return m ? `<g clip-path="url(#z${FLIPPED[home]})"><g transform="${m}"><g clip-path="url(#o${home})"><g transform="${tf(st)}">${art(st)}</g></g></g></g>` : '';
   }).join('');
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}">
 <style>${S.mode === 'outline' ? OUTLINE_CSS : ''}</style><defs>${defs()}</defs>${S.mode === 'outline' ? rect(0, 0, W, H, '#fff') : ''}
 <g class="art">
 <g filter="url(#feltBase)"><path d="${sweaterPath()}" fill="${S.base}"/></g>
 ${clipped(patternSVG(R))}${clipped(yokeSVG())}${clipped(trimSVG())}${clipped(stitchSVG())}${clipped(buttonSVG())}
-<g clip-path="url(#sw)">${stickers}</g>
+<g clip-path="url(#sw)"><g pointer-events="none">${wrapped}</g>${stickers}</g>
 <path class="line ol" d="${sweaterPath()}" fill="none" stroke="none"/>
 </g></svg>`;
-  return suffix ? svg.replace(/(id="|url\(#)(sw|feltBase|felt|pomShade|pom)\b/g, '$1$2' + suffix) : svg;
+  return suffix ? svg.replace(/(id="|url\(#)(o[BRL]|z[BRL]|sw|feltBase|felt|pomShade|pom)\b/g, '$1$2' + suffix) : svg;
 }
 
 /* ---------- UI ---------- */
@@ -532,6 +577,7 @@ stage.addEventListener('pointermove', e => {
     st.r = drag.r0 + (Math.atan2(py - st.y, px - st.x) - drag.a0) * 180 / Math.PI;
   }
   stage.querySelectorAll(`.stk[data-id="${st.id}"], .ui`).forEach(n => n.setAttribute('transform', tf(st)));
+  stage.querySelector(`.stk[data-id="${st.id}"]`).parentNode.setAttribute('clip-path', `url(#z${homeOf(st)})`);
 });
 const endDrag = () => { if (drag) { drag = null; render(false); } };
 stage.addEventListener('pointerup', endDrag);
